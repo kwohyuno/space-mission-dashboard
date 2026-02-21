@@ -6,7 +6,15 @@ import os
 # ---------------------------------------------------------------------------
 # Page configuration
 # ---------------------------------------------------------------------------
-st.set_page_config(page_title="Space Missions Dashboard", page_icon="\U0001F680", layout="wide")
+st.set_page_config(page_title="Space Missions Dashboard", page_icon="\U0001F680", layout="wide", menu_items={})
+
+st.markdown("""
+<style>
+    #MainMenu {visibility: hidden;}
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
+</style>
+""", unsafe_allow_html=True)
 
 DATA_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "space_missions.csv")
 
