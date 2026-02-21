@@ -11,6 +11,8 @@ _DATA_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "space_mis
 
 def _load_data() -> pd.DataFrame:
     """Load and parse the space missions CSV data."""
+    if not os.path.exists(_DATA_PATH):
+        return pd.DataFrame(columns=["Company", "Location", "Date", "Time", "Rocket", "Mission", "RocketStatus", "Price", "MissionStatus"])
     df = pd.read_csv(_DATA_PATH)
     df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
     return df
@@ -18,12 +20,16 @@ def _load_data() -> pd.DataFrame:
 
 def getMissionCountByCompany(companyName: str) -> int:
     """Returns the total number of missions for a given company."""
+    if not isinstance(companyName, str):
+        return 0
     df = _load_data()
     return int((df["Company"] == companyName).sum())
 
 
 def getSuccessRate(companyName: str) -> float:
     """Calculates the success rate for a given company as a percentage (0-100), rounded to 2 decimal places."""
+    if not isinstance(companyName, str):
+        return 0.0
     df = _load_data()
     company_missions = df[df["Company"] == companyName]
     if company_missions.empty:
@@ -34,9 +40,16 @@ def getSuccessRate(companyName: str) -> float:
 
 def getMissionsByDateRange(startDate: str, endDate: str) -> list:
     """Returns mission names launched between startDate and endDate (inclusive), sorted chronologically."""
+    if not isinstance(startDate, str) or not isinstance(endDate, str):
+        return []
+    try:
+        start = pd.to_datetime(startDate)
+        end = pd.to_datetime(endDate)
+    except (ValueError, TypeError):
+        return []
+    if start > end:
+        return []
     df = _load_data()
-    start = pd.to_datetime(startDate)
-    end = pd.to_datetime(endDate)
     mask = (df["Date"] >= start) & (df["Date"] <= end)
     filtered = df[mask].sort_values("Date")
     return filtered["Mission"].tolist()
@@ -47,7 +60,11 @@ def getTopCompaniesByMissionCount(n: int) -> list:
     Returns list of tuples: [(companyName, missionCount), ...].
     Ties are broken alphabetically by company name.
     """
+    if not isinstance(n, int) or n <= 0:
+        return []
     df = _load_data()
+    if df.empty:
+        return []
     counts = df.groupby("Company").size().reset_index(name="count")
     counts = counts.sort_values(["count", "Company"], ascending=[False, True])
     return [(row["Company"], int(row["count"])) for _, row in counts.head(n).iterrows()]
@@ -61,6 +78,8 @@ def getMissionStatusCount() -> dict:
 
 def getMissionsByYear(year: int) -> int:
     """Returns the total number of missions launched in a specific year."""
+    if not isinstance(year, int):
+        return 0
     df = _load_data()
     return int((df["Date"].dt.year == year).sum())
 
@@ -70,6 +89,8 @@ def getMostUsedRocket() -> str:
     If multiple rockets are tied, returns the first one alphabetically.
     """
     df = _load_data()
+    if df.empty:
+        return ""
     counts = df.groupby("Rocket").size().reset_index(name="count")
     max_count = counts["count"].max()
     top_rockets = counts[counts["count"] == max_count]
@@ -78,10 +99,12 @@ def getMostUsedRocket() -> str:
 
 def getAverageMissionsPerYear(startYear: int, endYear: int) -> float:
     """Calculates the average number of missions per year over a given range (inclusive), rounded to 2 decimal places."""
-    df = _load_data()
+    if not isinstance(startYear, int) or not isinstance(endYear, int):
+        return 0.0
     num_years = endYear - startYear + 1
     if num_years <= 0:
         return 0.0
+    df = _load_data()
     mask = (df["Date"].dt.year >= startYear) & (df["Date"].dt.year <= endYear)
     total_missions = int(mask.sum())
     return round(float(total_missions / num_years), 2)
